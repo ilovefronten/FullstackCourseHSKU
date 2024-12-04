@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios';
 import Numbers from "./Components/Numbers";
 import Filter from "./Components/Filter";
 import Persons from "./Components/Persons";
 import PersonForm from "./Components/PersonForm";
+
 
 
 const App = () => {
@@ -11,12 +13,7 @@ const App = () => {
         name: 'Arto Hellas', number: '040-1234567'
       }
     ]) */
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-  ])
+  const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [newNameFilter, setNewNameFilter] = useState('')
@@ -43,6 +40,17 @@ const App = () => {
     }
   }
 
+  /* Hook for useEffect to get person from db.json */
+  const hook = () => {
+    axios
+    .get('http://localhost:3001/persons')
+    .then(res => {
+      setPersons(res.data)
+    })
+  } 
+
+  /* Get persons from db.json */
+  useEffect(hook, [])
 
   const hasFilter = (newNameFilter) => newNameFilter !== ''
 
