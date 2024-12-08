@@ -2,21 +2,30 @@ import { useState, useEffect } from 'react'
 import Filter from "./Components/Filter";
 import Persons from "./Components/Persons";
 import PersonForm from "./Components/PersonForm";
+import Notification from './Components/Notification';
 import phonebookService from './services/phonebook';
 
-
 const App = () => {
-  /*   const [persons, setPersons] = useState([
-      {
-        name: 'Arto Hellas', number: '040-1234567'
-      }
-    ]) */
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [newNameFilter, setNewNameFilter] = useState('')
+  const [notice, setNotice] = useState('')
+  const [noticeType, setNoticeType] = useState('')
 
   /***** some useful funcs: *****/
+  /* Reset input fields and states */
+  const resetFields = () => {
+    setTimeout(() => {
+      setNotice('')
+      setNoticeType('')
+    }, 3000);
+    setNewName('')
+    setNewNumber('')
+    setNewNameFilter('')
+  }
+
+
   /* Check if name not exist */
   const isNameNotExisted = (newName) => {
     return !persons.find(person => person.name === newName);
@@ -32,10 +41,10 @@ const App = () => {
       }
       phonebookService.create(newPerson).then(newlyAddedPerson => {
         setPersons(persons.concat(newlyAddedPerson))
-        /* Reset input fields */
-        setNewName('')
-        setNewNumber('')
-        setNewNameFilter('')
+        setNotice('Add successfully!')
+        setNoticeType('success')
+        /* Reset input fields and notice */
+        resetFields()
       })
 
     }
@@ -44,16 +53,38 @@ const App = () => {
   /* Change name */
   const changePersonNumber = (name, newNumber) => {
     if (window.confirm(`${name} is already added to phonebook, replace the old number with a new one?`)) {
-      
-      const updatedPerson = {...persons.find((person) => person.name === name), number: newNumber}
+
+      const updatedPerson = { ...persons.find((person) => person.name === name), number: newNumber }
       phonebookService.changeNumber(updatedPerson).then(modifiedPerson => {
-        setPersons(persons.map((person) => 
-          person.name === modifiedPerson.name ? modifiedPerson : person 
+        setPersons(persons.map((person) =>
+          person.name === modifiedPerson.name ? modifiedPerson : person
         ))
-        setNewName('')
-        setNewNumber('')
-        setNewNameFilter('')
-      })    
+        setNotice(`${name} is updated successfully!`)
+        setNoticeType('success')
+        /* Reset input fields and notice */
+        resetFields()
+      })
+    }
+  }
+
+  /* Delete a person number */
+  const deletePersonNumber = (name, id) => {
+    if (window.confirm(`Delete ${name}, id: ${id}`)) {
+      phonebookService
+        .deletePerson(id)
+        .then(person => {
+          setNoticeType('success')
+          setNotice(`${person.name} is deleted!`)
+        })
+        .catch(err => {
+          setNoticeType('error')
+          setNotice(`Delete person failed!`)
+        })
+
+      setPersons(persons.filter(person => person.id !== id))
+
+      /* Reset input fields and notice */
+      resetFields()
     }
   }
 
@@ -69,9 +100,9 @@ const App = () => {
   /* Get persons from db.json */
   useEffect(hook, [])
 
+  /* Display persons by filter */
   const hasFilter = (newNameFilter) => newNameFilter !== ''
 
-  /* Display persons by filter */
   const personToShow = hasFilter(newNameFilter)
     ? persons.filter((person) =>
       person.name.toLocaleLowerCase().includes(newNameFilter.toLocaleLowerCase()))
@@ -106,15 +137,7 @@ const App = () => {
 
   /* Handler of person deletion. */
   const handleDeletePerson = (name, id) => {
-    if (window.confirm(`Delete ${name}, id: ${id}`)) {
-      phonebookService
-        .deletePerson(id)
-        .then(person => { console.log(`${person.name} is removed.`) })
-
-      setPersons(persons.filter(person => person.id !== id))
-    }
-
-
+    deletePersonNumber(name, id)
   }
 
 
@@ -125,7 +148,7 @@ const App = () => {
         newNameFilter={newNameFilter}
         onNameFilterChange={handleNameFilterChange}
       />
-
+      <Notification type={noticeType} message={notice} />
       <h3>Add a new</h3>
       <PersonForm
         newName={newName}
